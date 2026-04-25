@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>איקס עיגול - מילים נרדפות</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* משתני צבע - ורוד וסגול */
+        :root {
+            --primary-pink: #ff9ff3;
+            --primary-purple: #9b59b6;
+            --dark-purple: #4a235a;
+            --light-pink: #fdebd0;
+            --white: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #ff9ff3 0%, #9b59b6 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Rubik', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--dark-purple);
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--dark-purple);
+            margin-bottom: 0.5rem;
+        }
+
+        .status {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--primary-purple);
+            background: var(--white);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .status span {
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+
+        .player-x { color: #e84393 !important; }
+        .player-o { color: #8e44ad !important; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90vw;
+            max-width: 400px;
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            background: var(--white);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, background-color 0.2s;
+            user-select: none;
+        }
+
+        .cell:hover {
+            transform: scale(0.95);
+            background: #fdf2e9;
+        }
+
+        .cell:empty:hover {
+            background: var(--primary-pink);
+            opacity: 0.5;
+        }
+
+        .btn-restart {
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: var(--dark-purple);
+            color: var(--white);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .btn-restart:hover {
+            background: var(--primary-purple);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        /* עיצוב החלונות הקופצים (Modals) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 90vw;
+            width: 450px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            transform: translateY(-50px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .question-text {
+            font-size: 1.6rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-purple);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .option-btn {
+            padding: 1rem;
+            font-size: 1.2rem;
+            background: #f0f3f4;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--dark-purple);
+            font-weight: 500;
+        }
+
+        .option-btn:hover {
+            background: var(--primary-pink);
+            border-color: var(--primary-purple);
+            color: var(--white);
+        }
+
+        .option-btn.correct {
+            background: #2ecc71 !important;
+            border-color: #27ae60 !important;
+            color: white !important;
+        }
+
+        .option-btn.wrong {
+            background: #e74c3c !important;
+            border-color: #c0392b !important;
+            color: white !important;
+        }
+
+        #feedback-msg {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            min-height: 1.5em;
+        }
+
+        /* אנימציית קונפטי */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            z-index: 999;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+        
+        /* התאמה למסכים קטנים (רספונסיביות) */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .cell { font-size: 3rem; }
+            .options-grid { grid-template-columns: 1fr; }
+            .modal-content { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>משחק מילים נרדפות</h1>
+        <p>כיתה ו' | ענו נכון כדי לתפוס משבצת!</p>
+    </header>
+
+    <div class="status" id="status-display">תור: <span id="current-player" class="player-x">X</span></div>
+
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <button class="btn-restart" onclick="initGame()">משחק חדש</button>
+
+    <!-- חלון קופץ לשאלה -->
+    <div class="modal-overlay" id="question-modal">
+        <div class="modal-content">
+            <h2 class="question-text" id="question-text">כאן תופיע השאלה</h2>
+            <div class="options-grid" id="options-container">
+                <!-- הכפתורים יווצרו כאן דינמית -->
+            </div>
+            <div id="feedback-msg"></div>
+        </div>
+    </div>
+
+    <!-- חלון קופץ לסיום משחק -->
+    <div class="modal-overlay" id="game-over-modal">
+        <div class="modal-content">
+            <h2 class="question-text" id="game-over-text">המנצח הוא...</h2>
+            <button class="btn-restart" onclick="initGame()">שחקו שוב (שאלות חדשות)</button>
+        </div>
+    </div>
+
+    <script>
+        // מאגר שאלות מורחב - מילים נרדפות כיתה ו'
+        const allQuestions = [
+            { q: 'מהי המילה הנרדפת למילה "עצום"?', correct: 'כביר', wrong: ['זעיר', 'רגיל', 'חלש'] },
+            { q: 'מהי המילה הנרדפת למילה "זעף"?', correct: 'כעס', wrong: ['שמחה', 'פחד', 'בלבול'] },
+            { q: 'מהי המילה הנרדפת למילה "להביט"?', correct: 'להתבונן', wrong: ['להקשיב', 'לדבר', 'ללכת'] },
+            { q: 'מהי המילה הנרדפת למילה "פתע"?', correct: 'פתאום', wrong: ['לאט', 'תמיד', 'מחר'] },
+            { q: 'מהי המילה הנרדפת למילה "חולף"?', correct: 'עובר', wrong: ['נשאר', 'עוצר', 'מתחיל'] },
+            { q: 'מהי המילה הנרדפת למילה "טמיר"?', correct: 'נסתר', wrong: ['גלוי', 'ברור', 'מובן'] },
+            { q: 'מהי המילה הנרדפת למילה "עליז"?', correct: 'שמח', wrong: ['עצוב', 'כועס', 'עייף'] },
+            { q: 'מהי המילה הנרדפת למילה "מכשול"?', correct: 'מהמורה', wrong: ['פתרון', 'עזרה', 'הצלחה'] },
+            { q: 'מהי המילה הנרדפת למילה "דל"?', correct: 'עני', wrong: ['עשיר', 'חכם', 'חזק'] },
+            { q: 'מהי המילה הנרדפת למילה "מזור"?', correct: 'מרפא', wrong: ['חולי', 'כאב', 'פצע'] },
+            { q: 'מהי המילה הנרדפת למילה "אפלה"?', correct: 'חשכה', wrong: ['אור', 'שמש', 'זריחה'] },
+            { q: 'מהי המילה הנרדפת למילה "מתגורר"?', correct: 'גר', wrong: ['נוסע', 'הולך', 'עובד'] },
+            { q: 'מהי המילה הנרדפת למילה "ששון"?', correct: 'שמחה', wrong: ['עצב', 'פחד', 'כעס'] },
+            { q: 'מהי המילה הנרדפת למילה "אביון"?', correct: 'עני', wrong: ['עשיר', 'נדיב', 'קמצן'] },
+            { q: 'מהי המילה הנרדפת למילה "להרהר"?', correct: 'לחשוב', wrong: ['לרוץ', 'לישון', 'לצעוק'] },
+            { q: 'מהי המילה הנרדפת למילה "קשיש"?', correct: 'זקן', wrong: ['ילד', 'נער', 'תינוק'] },
+            { q: 'מהי המילה הנרדפת למילה "סוגיה"?', correct: 'בעיה / נושא', wrong: ['תשובה', 'ספר', 'משחק'] },
+            { q: 'מהי המילה הנרדפת למילה "איגרת"?', correct: 'מכתב', wrong: ['חבילה', 'עיתון', 'ספר'] },
+            { q: 'מהי המילה הנרדפת למילה "שגיאה"?', correct: 'טעות', wrong: ['הצלחה', 'תשובה', 'שאלה'] },
+            { q: 'מהי המילה הנרדפת למילה "תבל"?', correct: 'עולם', wrong: ['שמיים', 'ארץ', 'ים'] },
+            { q: 'מהי המילה הנרדפת למילה "חורש"?', correct: 'יער', wrong: ['מדבר', 'ים', 'הר'] },
+            { q: 'מהי המילה הנרדפת למילה "עמית"?', correct: 'חבר', wrong: ['אויב', 'מורה', 'תלמיד'] },
+            { q: 'מהי המילה הנרדפת למילה "עת"?', correct: 'זמן', wrong: ['מקום', 'אדם', 'חפץ'] },
+            { q: 'מהי המילה הנרדפת למילה "יהיר"?', correct: 'גאוותן', wrong: ['צנוע', 'ביישן', 'שקט'] },
+            { q: 'מהי המילה הנרדפת למילה "לטמון"?', correct: 'להחביא', wrong: ['לגלות', 'למצוא', 'לאבד'] },
+            { q: 'מהי המילה הנרדפת למילה "צונן"?', correct: 'קר', wrong: ['חם', 'רותח', 'פושר'] },
+            { q: 'מהי המילה הנרדפת למילה "ללפות"?', correct: 'לאחוז בחוזקה', wrong: ['לעזוב', 'לזרוק', 'לדחוף'] },
+            { q: 'מהי המילה הנרדפת למילה "מתון"?', correct: 'רגוע ושקול', wrong: ['פראי', 'מהיר', 'לחוץ'] }
+        ];
+
+        // משתנה ששומר את חפיסת השאלות הנוכחית. הוא לא מתאפס בין משחקים!
+        let questionDeck = [];
+
+        let boardState = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let pendingCellIndex = null;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // שורות
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // עמודות
+            [0, 4, 8], [2, 4, 6]             // אלכסונים
+        ];
+
+        const cells = document.querySelectorAll('.cell');
+        const statusDisplay = document.getElementById('current-player');
+        const questionModal = document.getElementById('question-modal');
+        const gameOverModal = document.getElementById('game-over-modal');
+
+        // פונקציית ערבוב מערך (אלגוריתם פישר-ייטס)
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // שליפת השאלה הבאה (מערבב מחדש רק אם החפיסה התרוקנה)
+        function getNextQuestion() {
+            if (questionDeck.length === 0) {
+                console.log("השאלות נגמרו, מערבב חפיסה חדשה!");
+                questionDeck = shuffle([...allQuestions]);
+            }
+            return questionDeck.pop();
+        }
+
+        // אתחול לוח המשחק בלבד (שומר על חפיסת השאלות)
+        function initGame() {
+            boardState = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            updateStatusDisplay();
+            
+            cells.forEach(cell => {
+                cell.innerText = '';
+                cell.classList.remove('player-x', 'player-o');
+            });
+            
+            closeModals();
+        }
+
+        function updateStatusDisplay() {
+            statusDisplay.innerText = currentPlayer;
+            statusDisplay.className = currentPlayer === 'X' ? 'player-x' : 'player-o';
+        }
+
+        // לחיצה על משבצת
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                const index = cell.getAttribute('data-index');
+                if (boardState[index] !== '' || !gameActive) return;
+                
+                pendingCellIndex = index;
+                openQuestionModal();
+            });
+        });
+
+        // פתיחת חלון השאלה
+        function openQuestionModal() {
+            const currentQ = getNextQuestion();
+            document.getElementById('question-text').innerText = currentQ.q;
+            document.getElementById('feedback-msg').innerText = '';
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            // יצירת מערך תשובות וערבובו
+            let options = [{text: currentQ.correct, isCorrect: true}];
+            currentQ.wrong.forEach(w => options.push({text: w, isCorrect: false}));
+            options = shuffle(options);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt.text;
+                btn.onclick = () => handleAnswer(opt.isCorrect, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            questionModal.classList.add('active');
+        }
+
+        // טיפול בתשובה
+        function handleAnswer(isCorrect, selectedBtn) {
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+            const feedback = document.getElementById('feedback-msg');
+
+            if (isCorrect) {
+                selectedBtn.classList.add('correct');
+                feedback.style.color = '#2ecc71';
+                feedback.innerText = 'כל הכבוד! תשובה נכונה.';
+                
+                setTimeout(() => {
+                    questionModal.classList.remove('active');
+                    placeMark(pendingCellIndex);
+                }, 1500);
+            } else {
+                selectedBtn.classList.add('wrong');
+                feedback.style.color = '#e74c3c';
+                feedback.innerText = 'טעות! התור עובר ליריב.';
+
+                setTimeout(() => {
+                    questionModal.classList.remove('active');
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    updateStatusDisplay();
+                }, 2000);
+            }
+        }
+
+        // הנחת הסמל (X או O) על הלוח
+        function placeMark(index) {
+            boardState[index] = currentPlayer;
+            const cell = document.querySelector(`.cell[data-index="${index}"]`);
+            cell.innerText = currentPlayer;
+            cell.classList.add(currentPlayer === 'X' ? 'player-x' : 'player-o');
+
+            checkWin();
+        }
+
+        // בדיקת ניצחון
+        function checkWin() {
+            let roundWon = false;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                gameActive = false;
+                showGameOver(`השחקן המנצח הוא ${currentPlayer}! 🎉`);
+                shootConfetti();
+                return;
+            }
+
+            if (!boardState.includes('')) {
+                gameActive = false;
+                showGameOver('תיקו! משחק צמוד! 🤝');
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateStatusDisplay();
+        }
+
+        // הצגת חלון סיום משחק
+        function showGameOver(msg) {
+            document.getElementById('game-over-text').innerText = msg;
+            gameOverModal.classList.add('active');
+        }
+
+        function closeModals() {
+            questionModal.classList.remove('active');
+            gameOverModal.classList.remove('active');
+        }
+
+        // יריית קונפטי בניצחון
+        function shootConfetti() {
+            const colors = ['#ff9ff3', '#feca57', '#ff6b6b', '#48dbfb', '#1dd1a1', '#9b59b6'];
+            for(let i=0; i<80; i++) {
+                let conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                conf.style.opacity = Math.random();
+                document.body.appendChild(conf);
+                
+                setTimeout(() => conf.remove(), 5000);
+            }
+        }
+
+        // התחלת המשחק (מנקה לוח, משאיר את השאלות)
+        initGame();
+    </script>
+</body>
+</html>
